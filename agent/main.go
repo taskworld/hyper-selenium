@@ -2,7 +2,7 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-	"github.com/taskworld/hyper-selenium/worker/infoserver"
+	"github.com/taskworld/hyper-selenium/agent/infoserver"
 )
 
 func main() {
