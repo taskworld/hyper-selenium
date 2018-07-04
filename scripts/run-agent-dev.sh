@@ -3,7 +3,7 @@
 if [ -z "$(docker images -q hyper-selenium-env)" ]
 then
     echo ">>> Building Selenium docker image..."
-    docker build --target selenium -t hyper-selenium-env .
+    docker build --target env -t hyper-selenium-env .
 else
     echo ">>> hyper-selenium-env image already exists!"
 fi
@@ -15,4 +15,4 @@ mkdir -p build
 go build -v -installsuffix cgo -o ./build/hyper-selenium-agent ./agent
 
 echo ">>> Running container..."
-docker run -ti --rm -v "$(pwd)/build/hyper-selenium-agent:/hyper-selenium/hyper-selenium-agent" hyper-selenium-env ./hyper-selenium-agent
+docker run -ti --rm -v "$(pwd)/build/hyper-selenium-agent:/hyper-selenium/hyper-selenium-agent" hyper-selenium-env ./hyper-selenium-agent "$@"
