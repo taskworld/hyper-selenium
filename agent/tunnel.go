@@ -9,13 +9,13 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var sshLog = log.WithFields(log.Fields{
+var myLog = log.WithFields(log.Fields{
 	"module": "tunnel",
 })
 
 // Connect to SSH, exiting process if cannot connect.
 func connectSSHOrCrash(remote, username, password string) *ssh.Client {
-	sshLog.Info("Connecting to SSH server...")
+	myLog.Info("Connecting to SSH server...")
 
 	config := &ssh.ClientConfig{
 		User: username,
@@ -28,36 +28,36 @@ func connectSSHOrCrash(remote, username, password string) *ssh.Client {
 
 	client, err := ssh.Dial("tcp", remote, config)
 	if err != nil {
-		sshLog.Fatal("Cannot connect to SSH server: ", err)
+		myLog.Fatal("Cannot connect to SSH server: ", err)
 	}
 
-	sshLog.Info("Dial succeeded!")
+	myLog.Info("Dial succeeded!")
 	return client
 }
 
 func createTunnelOrCrash(sshClient *ssh.Client, path, target string) {
 	listener, err := sshClient.ListenUnix(path)
 	if err != nil {
-		sshLog.Fatal("Cannot set up Unix domain socket for listening: ", err)
+		myLog.Fatal("Cannot set up Unix domain socket for listening: ", err)
 	}
 
 	go func() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				sshLog.Error("Cannot accept connection: ", err)
+				myLog.Error("Cannot accept connection: ", err)
 				return
 			}
 			go func() {
 				targetConn, err := net.Dial("tcp", target)
 				if err != nil {
-					sshLog.Error("Cannot connect to", target, ": ", err)
+					myLog.Error("Cannot connect to", target, ": ", err)
 					return
 				}
 				transfer := func(writer, reader net.Conn) {
 					_, err := io.Copy(writer, reader)
 					if err != nil {
-						sshLog.Error("Cannot forward traffic: ", err)
+						myLog.Error("Cannot forward traffic: ", err)
 					}
 				}
 				go transfer(conn, targetConn)
