@@ -7,6 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/taskworld/hyper-selenium/agent/infoserver"
+	"github.com/taskworld/hyper-selenium/agent/selenium"
 )
 
 var sessionId string
@@ -31,7 +32,7 @@ func init() {
 func main() {
 	infoserver.StartInfoServer()
 
-	cmd := startSeleniumServerOrCrash()
+	cmd := selenium.StartOrCrash()
 	sshClient := connectSSHOrCrash(sshRemote, sshUsername, sshPassword)
 	defer sshClient.Close()
 	waitForSeleniumServerToBecomeAvailableOrCrash()

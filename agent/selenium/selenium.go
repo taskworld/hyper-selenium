@@ -1,4 +1,4 @@
-package main
+package selenium
 
 import (
 	"bufio"
@@ -15,6 +15,16 @@ import (
 var myLog = log.WithFields(log.Fields{
 	"module": "selenium",
 })
+
+type SeleniumServer struct {
+	cmd *exec.Cmd
+}
+
+// StartOrCrash starts a Selenium server or crashes the app.
+func StartOrCrash() *SeleniumServer {
+	cmd := startSeleniumServerOrCrash()
+	return &SeleniumServer{cmd}
+}
 
 // Start selenium process, exit if cannot start.
 func startSeleniumServerOrCrash() *exec.Cmd {
@@ -59,8 +69,9 @@ func startSeleniumServerOrCrash() *exec.Cmd {
 	return cmd
 }
 
-// Check for selenium server to respond positively.
-func waitForSeleniumServerToBecomeAvailableOrCrash() {
+// WaitForServerToBecomeAvailableOrCrash waits until server is available
+// otherwise crashes the process.
+func (s *SeleniumServer) WaitForServerToBecomeAvailableOrCrash() {
 	start := time.Now()
 	maxTimeout := 30.0
 	myLog.Info("Waiting for Selenium server to become available...")
@@ -92,8 +103,8 @@ func waitForSeleniumServerToBecomeAvailableOrCrash() {
 	}
 }
 
-// Wait for a session to be created.
-func waitForSeleniumSession() error {
+// WaitForSession wait until a Selenium session is created.
+func (s *SeleniumServer) WaitForSession() error {
 	timeout := time.Duration(5 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
@@ -119,8 +130,17 @@ func waitForSeleniumSession() error {
 			myLog.Infof("There are %d active session(s)", sessionsCount)
 		}
 		if sessionsCount > 0 {
-			return
+			return nil
 		}
 		time.Sleep(time.Duration(500) * time.Millisecond)
+	}
+}
+
+// Wait waits until Selenium server exits. If it crashed, then
+// the app crashes too.
+func (s *SeleniumServer) Wait() {
+	err := s.cmd.Wait()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
