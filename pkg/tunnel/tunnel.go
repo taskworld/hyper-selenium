@@ -64,7 +64,6 @@ func (t *Tunnel) CreateRemoteTunnelOrCrash(path, target string) {
 		if err != nil {
 			tunnelLog.Fatal("Cannot accept connection: ", err)
 		}
-		tunnelLog.Info("Accepting connection!")
 		go func() {
 			targetConn, err := net.Dial("tcp", target)
 			if err != nil {
@@ -81,4 +80,46 @@ func (t *Tunnel) CreateRemoteTunnelOrCrash(path, target string) {
 			go transfer(targetConn, conn)
 		}()
 	}
+}
+
+// CreateLocalTunnelOrCrash creates a tunnel on local machine
+// that dials to the target path. Returns the local listening address.
+func (t *Tunnel) CreateLocalTunnelOrCrash(path string) string {
+	sshClient := t.client
+	tunnelLog := myLog.WithFields(log.Fields{
+		"path": path,
+	})
+	listener, err := net.Listen("tcp", "127.0.0.1:")
+	if err != nil {
+		tunnelLog.Fatal("Cannot set up local tunnel: ", err)
+	}
+	address := listener.Addr().String()
+	tunnelLog = tunnelLog.WithField("address", address)
+	tunnelLog.Info("Local tunnel created")
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				tunnelLog.Fatal("Cannot accept connection: ", err)
+			}
+			go func() {
+				targetConn, err := sshClient.Dial("unix", path)
+				if err != nil {
+					tunnelLog.Error("Cannot connect to", path, ": ", err)
+					return
+				}
+				transfer := func(writer, reader net.Conn) {
+					_, err := io.Copy(writer, reader)
+					if err != nil {
+						tunnelLog.Error("Cannot forward traffic: ", err)
+					}
+				}
+				go transfer(conn, targetConn)
+				go transfer(targetConn, conn)
+			}()
+		}
+	}()
+
+	return address
 }
