@@ -38,8 +38,16 @@ Running
 docker run -ti --rm hyper-selenium-agent
 ```
 
-Development workflow (must build container first)
+### Local development workflow
+
+Running a central ssh server:
 
 ```
-./scripts/run-agent-dev.sh
+docker run -d -p 2222:22 --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
+```
+
+Compiling and running the agent:
+
+```
+./scripts/run-agent-dev.sh --ssh-remote=192.168.2.62:2222 --id=test
 ```
