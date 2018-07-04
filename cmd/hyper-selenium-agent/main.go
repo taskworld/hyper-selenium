@@ -42,9 +42,9 @@ func main() {
 	selenium.WaitForServerToBecomeAvailableOrCrash()
 
 	prefix := "/tmp/hyper-selenium-" + sessionID
-	go tunnel.CreateTunnelOrCrash(prefix+"-selenium", "localhost:4444")
-	go tunnel.CreateTunnelOrCrash(prefix+"-vnc", "localhost:5900")
-	go tunnel.CreateTunnelOrCrash(prefix+"-info", "localhost:8080")
+	go tunnel.CreateRemoteTunnelOrCrash(prefix+"-selenium", "localhost:4444")
+	go tunnel.CreateRemoteTunnelOrCrash(prefix+"-vnc", "localhost:5900")
+	go tunnel.CreateRemoteTunnelOrCrash(prefix+"-info", "localhost:8080")
 
 	go func() {
 		selenium.WaitForSession()

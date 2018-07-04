@@ -44,10 +44,10 @@ func (t *Tunnel) Close() error {
 	return t.client.Close()
 }
 
-// CreateTunnelOrCrash creates a Unix domain socket at `path`
+// CreateRemoteTunnelOrCrash creates a Unix domain socket at `path`
 // in the remote-side, proxying all connection to `target`
 // on local side.
-func (t *Tunnel) CreateTunnelOrCrash(path, target string) {
+func (t *Tunnel) CreateRemoteTunnelOrCrash(path, target string) {
 	sshClient := t.client
 	tunnelLog := myLog.WithFields(log.Fields{
 		"path":   path,
