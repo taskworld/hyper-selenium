@@ -6,12 +6,12 @@ ENV CGO_ENABLED=0
 ENV GOOS=linux
 RUN dep ensure -vendor-only
 COPY agent ./agent
-RUN go build -a -v -installsuffix cgo -o hyper-selenium-agent ./agent
+RUN mkdir -p build && go build -a -v -installsuffix cgo -o build/hyper-selenium-agent ./agent
 
 FROM selenium/standalone-chrome-debug:3.12.0-cobalt
 RUN sudo apt-get update && sudo apt-get install -y ffmpeg gpac && sudo rm -rf /var/lib/apt/lists/*
 WORKDIR /hyper-selenium/
-COPY --from=builder /go/src/github.com/taskworld/hyper-selenium/hyper-selenium-agent .
+COPY --from=builder /go/src/github.com/taskworld/hyper-selenium/build/hyper-selenium-agent .
 ENV SCREEN_WIDTH=1280
 ENV SCREEN_HEIGHT=1024
 CMD ["./hyper-selenium-agent"]
