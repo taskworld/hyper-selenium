@@ -3,16 +3,18 @@ package main
 import (
 	"io"
 	"net"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
+var sshLog = log.WithFields(log.Fields{
+	"module": "tunnel",
+})
+
 // Connect to SSH, exiting process if cannot connect.
 func connectSSHOrCrash() *ssh.Client {
-	sshLog := log.WithFields(log.Fields{
-		"module": "ssh",
-	})
 	sshLog.Info("Connecting to SSH server...")
 
 	config := &ssh.ClientConfig{
@@ -21,11 +23,12 @@ func connectSSHOrCrash() *ssh.Client {
 			ssh.Password("root"),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         time.Duration(5 * time.Second),
 	}
 
-	client, err := ssh.Dial("tcp", "192.168.2.34:32768", config)
+	client, err := ssh.Dial("tcp", "192.168.2.62:32768", config)
 	if err != nil {
-		sshLog.Fatal("Failed to dial: ", err)
+		sshLog.Fatal("Cannot connect to SSH server: ", err)
 	}
 
 	sshLog.Info("Dial succeeded!")
@@ -35,7 +38,7 @@ func connectSSHOrCrash() *ssh.Client {
 func createTunnelOrCrash(sshClient *ssh.Client, path, target string) {
 	listener, err := sshClient.ListenUnix(path)
 	if err != nil {
-		log.Fatal(err)
+		sshLog.Fatal("Cannot set up Unix domain socket for listening: ", err)
 	}
 
 	go func() {
@@ -45,19 +48,19 @@ func createTunnelOrCrash(sshClient *ssh.Client, path, target string) {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				myLog.Error("Cannot accept connection", err)
+				myLog.Error("Cannot accept connection: ", err)
 				return
 			}
 			go func() {
 				targetConn, err := net.Dial("tcp", target)
 				if err != nil {
-					myLog.Error("Cannot connect", err)
+					myLog.Error("Cannot connect to", target, ": ", err)
 					return
 				}
 				copyConn := func(writer, reader net.Conn) {
 					_, err := io.Copy(writer, reader)
 					if err != nil {
-						myLog.Printf("io.Copy error: %s", err)
+						myLog.Error("Cannot forward traffic: ", err)
 					}
 				}
 				go copyConn(conn, targetConn)

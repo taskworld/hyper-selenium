@@ -20,12 +20,12 @@ func startSeleniumServerOrCrash() *exec.Cmd {
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		log.Fatal(err)
+		seleniumLog.Fatal(err)
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		seleniumLog.Fatal(err)
 	}
 
 	go func() {
@@ -63,6 +63,7 @@ func waitForSeleniumServerToBecomeAvailableOrCrash() {
 	})
 	start := time.Now()
 	maxTimeout := 30.0
+	myLog.Info("Waiting for Selenium server to become available...")
 	for {
 		if time.Now().Sub(start).Seconds() > maxTimeout {
 			myLog.Fatal("Give up checking Selenium server")
@@ -74,7 +75,7 @@ func waitForSeleniumServerToBecomeAvailableOrCrash() {
 		}
 		resp, err := client.Get("http://localhost:4444/wd/hub/status/")
 		if err != nil {
-			myLog.Error("Cannot connect to Selenium", err)
+			myLog.Error("Cannot connect to Selenium: ", err)
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			continue
 		}
@@ -86,7 +87,7 @@ func waitForSeleniumServerToBecomeAvailableOrCrash() {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			continue
 		}
-		myLog.Info("Selenium server is ready.")
+		myLog.Info("Selenium server is ready. ^_^")
 		return
 	}
 }
