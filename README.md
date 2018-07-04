@@ -1,5 +1,7 @@
 # hyper-selenium
 
+⚠️ ⚠️ **Go Noob Warning:** This is my first ever Go project. Please expect to see a lot of stupid noobish unidiomatic Go code in here. PRs welcome. ⚠️ ⚠️
+
 ## The story
 
 This is the story of our E2E test infrastructure.
