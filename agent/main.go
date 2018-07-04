@@ -35,7 +35,7 @@ func main() {
 	sshClient := connectSSHOrCrash(sshRemote, sshUsername, sshPassword)
 	defer sshClient.Close()
 	waitForSeleniumServerToBecomeAvailableOrCrash()
-	prefix := "/tmp/meow02"
+	prefix := "/tmp/hyper-selenium-" + sessionId
 	createTunnelOrCrash(sshClient, prefix+".selenium", "localhost:4444")
 	createTunnelOrCrash(sshClient, prefix+".vnc", "localhost:5900")
 	createTunnelOrCrash(sshClient, prefix+".info", "localhost:8080")
