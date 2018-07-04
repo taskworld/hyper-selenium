@@ -38,7 +38,7 @@ Running
 docker run -ti --rm hyper-selenium-agent
 ```
 
-Development workflow
+Development workflow (must build container first)
 
 ```
 ./scripts/run-agent-dev.sh

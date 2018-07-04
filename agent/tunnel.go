@@ -14,19 +14,19 @@ var sshLog = log.WithFields(log.Fields{
 })
 
 // Connect to SSH, exiting process if cannot connect.
-func connectSSHOrCrash() *ssh.Client {
+func connectSSHOrCrash(remote, username, password string) *ssh.Client {
 	sshLog.Info("Connecting to SSH server...")
 
 	config := &ssh.ClientConfig{
-		User: "root",
+		User: username,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("root"),
+			ssh.Password(password),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         time.Duration(5 * time.Second),
 	}
 
-	client, err := ssh.Dial("tcp", "192.168.2.62:32768", config)
+	client, err := ssh.Dial("tcp", remote, config)
 	if err != nil {
 		sshLog.Fatal("Cannot connect to SSH server: ", err)
 	}
@@ -42,29 +42,26 @@ func createTunnelOrCrash(sshClient *ssh.Client, path, target string) {
 	}
 
 	go func() {
-		myLog := log.WithFields(log.Fields{
-			"module": "ssh-tunnel",
-		})
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				myLog.Error("Cannot accept connection: ", err)
+				sshLog.Error("Cannot accept connection: ", err)
 				return
 			}
 			go func() {
 				targetConn, err := net.Dial("tcp", target)
 				if err != nil {
-					myLog.Error("Cannot connect to", target, ": ", err)
+					sshLog.Error("Cannot connect to", target, ": ", err)
 					return
 				}
-				copyConn := func(writer, reader net.Conn) {
+				transfer := func(writer, reader net.Conn) {
 					_, err := io.Copy(writer, reader)
 					if err != nil {
-						myLog.Error("Cannot forward traffic: ", err)
+						sshLog.Error("Cannot forward traffic: ", err)
 					}
 				}
-				go copyConn(conn, targetConn)
-				go copyConn(targetConn, conn)
+				go transfer(conn, targetConn)
+				go transfer(targetConn, conn)
 			}()
 		}
 	}()
