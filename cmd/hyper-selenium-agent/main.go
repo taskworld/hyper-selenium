@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/taskworld/hyper-selenium/agent/infoserver"
-	"github.com/taskworld/hyper-selenium/agent/selenium"
-	"github.com/taskworld/hyper-selenium/agent/tunnel"
-	"github.com/taskworld/hyper-selenium/agent/vtr"
+	"github.com/taskworld/hyper-selenium/pkg/infoserver"
+	"github.com/taskworld/hyper-selenium/pkg/selenium"
+	"github.com/taskworld/hyper-selenium/pkg/tunnel"
+	"github.com/taskworld/hyper-selenium/pkg/vtr"
 )
 
 var sessionId string
