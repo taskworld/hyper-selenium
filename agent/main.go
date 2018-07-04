@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/taskworld/hyper-selenium/agent/infoserver"
 	"github.com/taskworld/hyper-selenium/agent/selenium"
+	"github.com/taskworld/hyper-selenium/agent/tunnel"
+	"github.com/taskworld/hyper-selenium/agent/vtr"
 )
 
 var sessionId string
@@ -32,21 +33,23 @@ func init() {
 func main() {
 	infoserver.StartInfoServer()
 
-	cmd := selenium.StartOrCrash()
-	sshClient := connectSSHOrCrash(sshRemote, sshUsername, sshPassword)
-	defer sshClient.Close()
-	waitForSeleniumServerToBecomeAvailableOrCrash()
+	selenium := selenium.StartOrCrash()
+	defer selenium.Wait()
+
+	tunnel := tunnel.ConnectOrCrash(sshRemote, sshUsername, sshPassword)
+	defer tunnel.Close()
+
+	selenium.WaitForServerToBecomeAvailableOrCrash()
+
 	prefix := "/tmp/hyper-selenium-" + sessionId
-	createTunnelOrCrash(sshClient, prefix+".selenium", "localhost:4444")
-	createTunnelOrCrash(sshClient, prefix+".vnc", "localhost:5900")
-	createTunnelOrCrash(sshClient, prefix+".info", "localhost:8080")
+	go tunnel.CreateTunnelOrCrash(prefix+"-selenium", "localhost:4444")
+	go tunnel.CreateTunnelOrCrash(prefix+"-vnc", "localhost:5900")
+	go tunnel.CreateTunnelOrCrash(prefix+"-info", "localhost:8080")
+
 	go func() {
-		waitForSeleniumSession()
-		startRecordingVideo()
+		selenium.WaitForSession()
+		vtr.StartRecordingVideo()
 	}()
 
-	err := cmd.Wait()
-	if err != nil {
-		log.Fatal(err)
-	}
+	selenium.Wait()
 }

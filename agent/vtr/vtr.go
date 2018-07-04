@@ -1,4 +1,4 @@
-package main
+package vtr
 
 import (
 	"bufio"
@@ -13,11 +13,12 @@ type VTR struct {
 	cmd *exec.Cmd
 }
 
-var myLog := log.WithFields(log.Fields{
+var myLog = log.WithFields(log.Fields{
 	"module": "vtr",
 })
 
-func startRecordingVideo() *VTR {
+// StartRecordingVideo starts the video capture process.
+func StartRecordingVideo() *VTR {
 	myLog.Info("Recording video...")
 	cmd := exec.Command(
 		"ffmpeg",
