@@ -1,16 +1,22 @@
 package vtr
 
 import (
-	"bufio"
 	"os/exec"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/taskworld/hyper-selenium/pkg/cmdlogger"
 )
 
 // VTR represents a running instance of a video recorder process.
 type VTR struct {
-	cmd *exec.Cmd
+	cmd      *exec.Cmd
+	status   string
+	listener ProgressListener
+}
+
+type ProgressListener interface {
+	SetStatus(text string)
 }
 
 var myLog = log.WithFields(log.Fields{
@@ -18,8 +24,11 @@ var myLog = log.WithFields(log.Fields{
 })
 
 // StartRecordingVideo starts the video capture process.
-func StartRecordingVideo() *VTR {
+func StartRecordingVideo(listener ProgressListener) *VTR {
 	myLog.Info("Recording video...")
+	if listener != nil {
+		listener.SetStatus("launching")
+	}
 	cmd := exec.Command(
 		"ffmpeg",
 		"-video_size", "1280x1024",
@@ -28,57 +37,67 @@ func StartRecordingVideo() *VTR {
 		"-i", ":99.0",
 		"/videos/video.mp4",
 	)
+	cmdlogger.LogCommandOutput(myLog.WithField("cmd", "ffmpeg"), cmd)
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		myLog.Fatal(err)
-	}
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		myLog.Fatal(err)
-	}
-
-	go func() {
-		scanner := bufio.NewScanner(stderr)
-		for scanner.Scan() {
-			myLog.Error(scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			myLog.Fatal(err)
-		}
-	}()
-
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			myLog.Info(scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			myLog.Fatal(err)
-		}
-	}()
-
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		myLog.Fatal("Cannot start video recording process:", err)
 	}
 
 	myLog.Info("Video recording started...")
-
+	if listener != nil {
+		listener.SetStatus("recording")
+	}
 	return &VTR{
-		cmd: cmd,
+		cmd:      cmd,
+		listener: listener,
 	}
 }
 
 // StopRecordingVideo tells the video recording process to stop recording
 // video and blocks until video is converted successfully.
 func (v *VTR) StopRecordingVideo() error {
+	myLog.Info("Stopping video recording.")
+	listener := v.listener
+	if listener != nil {
+		listener.SetStatus("stopping")
+	}
 	if err := v.cmd.Process.Signal(syscall.SIGINT); err != nil {
+		if listener != nil {
+			listener.SetStatus("error")
+		}
+		myLog.Error("Cannot send SIGINT to ffmpeg process: ", err)
 		return err
 	}
 	if err := v.cmd.Wait(); err != nil {
+		if listener != nil {
+			listener.SetStatus("error")
+		}
+		myLog.Error("ffmpeg exit failed: ", err)
 		return err
 	}
+	myLog.Info("Finalizing the video.")
+	if listener != nil {
+		listener.SetStatus("finalizing")
+	}
+	cmd := exec.Command(
+		"MP4Box",
+		"-isma",
+		"-inter", "500",
+		"/videos/video.mp4",
+	)
+	cmdlogger.LogCommandOutput(myLog.WithField("cmd", "MP4Box"), cmd)
+	if err := cmd.Run(); err != nil {
+		myLog.Error("Finalization error: ", err)
+		listener.SetStatus("error")
+		return err
+	}
+	if listener != nil {
+		listener.SetStatus("finished")
+	}
 	return nil
+}
+
+func (v *VTR) setStatus(text string) {
+	v.status = text
 }

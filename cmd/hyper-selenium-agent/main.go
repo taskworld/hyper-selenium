@@ -32,25 +32,33 @@ func init() {
 }
 
 func main() {
-	infoserver.StartInfoServer()
+	infoserver := infoserver.StartInfoServer()
+	infoserver.SetStatus("initializing")
 
-	selenium := selenium.StartOrCrash()
-	defer selenium.Wait()
-
+	infoserver.SetMessage("Connecting to tunnel server...")
 	tunnel := tunnel.ConnectOrCrash(sshRemote, sshUsername, sshPassword)
 	defer tunnel.Close()
 
-	selenium.WaitForServerToBecomeAvailableOrCrash()
+	infoserver.SetMessage("Setting up tunnels...")
+	pathPrefix := "/tmp/hyper-selenium-" + sessionID
+	go tunnel.CreateRemoteTunnelOrCrash(pathPrefix+"-info", "localhost:8080")
+	go tunnel.CreateRemoteTunnelOrCrash(pathPrefix+"-selenium", "localhost:4444")
+	go tunnel.CreateRemoteTunnelOrCrash(pathPrefix+"-vnc", "localhost:5900")
 
-	prefix := "/tmp/hyper-selenium-" + sessionID
-	go tunnel.CreateRemoteTunnelOrCrash(prefix+"-selenium", "localhost:4444")
-	go tunnel.CreateRemoteTunnelOrCrash(prefix+"-vnc", "localhost:5900")
-	go tunnel.CreateRemoteTunnelOrCrash(prefix+"-info", "localhost:8080")
+	infoserver.SetMessage("Starting Selenium server...")
+	selenium := selenium.StartOrCrash()
+	defer selenium.Wait()
+
+	infoserver.SetMessage("Waiting for Selenium server to become available...")
+	selenium.WaitForServerToBecomeAvailableOrCrash()
 
 	go func() {
 		selenium.WaitForSession()
-		vtr.StartRecordingVideo()
+		vtr := vtr.StartRecordingVideo(nil)
+		infoserver.VTR = vtr
 	}()
 
+	infoserver.SetStatus("ready")
+	infoserver.SetMessage("Server is up!")
 	selenium.Wait()
 }
