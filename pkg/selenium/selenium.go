@@ -119,12 +119,12 @@ func (s *SeleniumServer) WaitForSession() error {
 			return fmt.Errorf("Status code (%d) is not 200", resp.StatusCode)
 		}
 		var data struct {
-			value []interface{}
+			Value []interface{} `json:"value"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			return errors.Wrap(err, "Cannot parse resulting JSON")
 		}
-		sessionsCount := len(data.value)
+		sessionsCount := len(data.Value)
 		if lastSessionCount != sessionsCount {
 			lastSessionCount = sessionsCount
 			myLog.Infof("There are %d active session(s)", sessionsCount)
