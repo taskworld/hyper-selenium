@@ -11,7 +11,7 @@ RUN mkdir -p build && go build -a -v -installsuffix cgo -o ./build/hyper-seleniu
 
 FROM selenium/standalone-chrome-debug:3.12.0-cobalt AS env
 RUN sudo apt-get update && sudo apt-get install -y ffmpeg gpac && sudo rm -rf /var/lib/apt/lists/*
-RUN sudo mkdir -p /videos/
+RUN sudo mkdir -p /videos/ && sudo chmod a+rwx /videos/
 WORKDIR /hyper-selenium/
 ENV SCREEN_WIDTH=1280
 ENV SCREEN_HEIGHT=1024

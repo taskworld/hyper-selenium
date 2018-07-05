@@ -27,7 +27,9 @@ func StartInfoServer() *InfoServer {
 	http.HandleFunc("/vtr/finish", func(w http.ResponseWriter, r *http.Request) {
 		vtr := infoserver.VTR
 		infoserver.VTR = nil
-		vtr.StopRecordingVideo()
+		if vtr != nil {
+			vtr.StopRecordingVideo()
+		}
 	})
 	http.Handle("/videos/", http.StripPrefix("/videos/", http.FileServer(http.Dir("/videos"))))
 	go func() {

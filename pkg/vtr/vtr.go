@@ -70,11 +70,7 @@ func (v *VTR) StopRecordingVideo() error {
 		return err
 	}
 	if err := v.cmd.Wait(); err != nil {
-		if listener != nil {
-			listener.SetStatus("error")
-		}
-		myLog.Error("ffmpeg exit failed: ", err)
-		return err
+		myLog.Info("ffmpeg exited: ", err)
 	}
 	myLog.Info("Finalizing the video.")
 	if listener != nil {
