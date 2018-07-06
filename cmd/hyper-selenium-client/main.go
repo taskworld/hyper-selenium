@@ -85,12 +85,6 @@ func main() {
 			Status  string `json:"status"`
 			Message string `json:"message"`
 		}
-		// respBody, err := ioutil.ReadAll(resp.Body)
-		// if err != nil {
-		// 	myLog.Error("Cannot read JSON: ", err)
-		// 	continue
-		// }
-		// myLog.Info(string(respBody))
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			myLog.Error("Cannot parse JSON: ", err)
 			continue
