@@ -53,3 +53,9 @@ Compiling and running the agent:
 ```
 ./scripts/run-agent-dev.sh --ssh-remote=192.168.2.62:2222 --id=test
 ```
+
+Running the client:
+
+```
+go run ./cmd/hyper-selenium-client/main.go --ssh-remote=192.168.2.62:2222 bash
+```
