@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,13 +18,19 @@ var sessionID string
 var sshRemote string
 var sshUsername string
 var sshPassword string
+var videoOutPath string
 var utility []string
+
+var myLog = log.WithFields(log.Fields{
+	"sessionID": sessionID,
+})
 
 func init() {
 	flag.StringVar(&sessionID, "id", "", "session id -- must be unique")
 	flag.StringVar(&sshRemote, "ssh-remote", "localhost:22", "ssh server address")
 	flag.StringVar(&sshUsername, "ssh-username", "root", "ssh server username")
 	flag.StringVar(&sshPassword, "ssh-password", "root", "ssh server password")
+	flag.StringVar(&videoOutPath, "video-out", "", "download video file")
 	flag.Parse()
 
 	if sessionID == "" {
@@ -41,9 +48,6 @@ func init() {
 }
 
 func main() {
-	myLog := log.WithFields(log.Fields{
-		"sessionID": sessionID,
-	})
 	myLog.Info("Initializing...")
 	prefix := "/tmp/hyper-selenium-" + sessionID
 
@@ -100,6 +104,7 @@ func main() {
 		myLog.Info("Server is ready now!")
 		break
 	}
+	defer fetchVideo(infoServerAddress)
 
 	cmd := exec.Command(utility[0], utility[1:]...)
 	cmd.Stdin = os.Stdin
@@ -108,5 +113,54 @@ func main() {
 	cmd.Env = append(os.Environ(), childEnv...)
 	if err := cmd.Run(); err != nil {
 		myLog.Fatal("Utility run failed: ", err)
+	}
+}
+
+func fetchVideo(infoServerAddress string) {
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	myLog.Info("Finishing the video recording...")
+	resp, err := client.Get("http://" + infoServerAddress + "/vtr/finish")
+	if err != nil {
+		myLog.Error("Cannot finish recording video: Cannot connect to server: ", err)
+		return
+	}
+	if resp.StatusCode != 200 {
+		myLog.WithFields(log.Fields{
+			"statusCode": resp.StatusCode,
+		}).Error("Cannot finish recording video: Status code is not 200")
+		return
+	}
+
+	if videoOutPath == "" {
+		myLog.Info("Finished recording video but not downloading because --video-out flag is not set.")
+		return
+	}
+
+	myLog.Info("Downloading the recorded video...")
+	resp, err = client.Get("http://" + infoServerAddress + "/videos/video.mp4")
+	if err != nil {
+		myLog.Error("Cannot download video: Cannot connect to server: ", err)
+		return
+	}
+	if resp.StatusCode != 200 {
+		myLog.WithFields(log.Fields{
+			"statusCode": resp.StatusCode,
+		}).Error("Cannot download video: Status code is not 200")
+		return
+	}
+	out, err := os.Create(videoOutPath)
+	if err != nil {
+		myLog.Error("Cannot download video: Cannot create file: ", err)
+		return
+	}
+	defer out.Close()
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		myLog.Error("Cannot download video: Cannot download: ", err)
+		return
 	}
 }
