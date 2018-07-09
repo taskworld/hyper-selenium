@@ -74,16 +74,27 @@ jobs:
               ./build/hyper-selenium-client \
               hyper-selenium-client-bin:/opt/hyper-selenium/bin
 
+            # Create a volume to store the e2e stuff.
+            docker create \
+              -v /usr/src/app \
+              --name hyper-selenium-e2e \
+              alpine:3.4 \
+              /bin/true
+            docker cp \
+              ./e2e/ \
+              hyper-selenium-e2e:/usr/src/app
+
             # Run the client
             docker run \
               --network=my-net \
               --volumes-from=hyper-selenium-client-bin \
+              --volumes-from=hyper-selenium-e2e \
               circleci/node:10 \
               /opt/hyper-selenium/bin/hyper-selenium-client \
               --ssh-remote=hyper-selenium-sshd:22 \
               --id=meow \
               --video-out=/videos/video.mp4 \
-              true
+              bash -c "yarn && yarn test"
 
       # Store the downloaded video into CircleCI artifacts.
       # - Guide: https://circleci.com/docs/2.0/artifacts/
