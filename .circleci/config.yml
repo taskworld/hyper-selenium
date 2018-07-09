@@ -35,6 +35,18 @@ jobs:
           command: docker run -t --network=my-net --rm hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:2222 --id=meow
           background: true
 
+      # Install `dep` so that we can install project dependencies.
+      # - Guide: https://golang.github.io/dep/docs/installation.html
+      - run:
+          name: Install dep
+          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+      # Install dependencies using `dep`.
+      # - Guide: https://golang.github.io/dep/docs/daily-dep.html
+      - run: dep ensure
+
+      # Build a “static binary” for the Client. This Client will be used in a Node.js environment.
+      # - Guide: https://medium.com/@kelseyhightower/optimizing-docker-images-for-static-binaries-b5696e26eb07
       - run:
           name: Build Client Binary
           command: |
