@@ -1,0 +1,63 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/taskworld/hyper-selenium
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+      - checkout
+
+      # This makes CircleCI 2.0 able to use Docker commands.
+      # - Guide: https://circleci.com/docs/2.0/building-docker-images/
+      # - Reference: https://circleci.com/docs/2.0/configuration-reference/#setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Set up a user-defined bridge, so that containers can talk to each other more easily.
+      # - Guide: https://docs.docker.com/network/bridge/
+      - run:
+          name: Setup Docker network
+          command: |
+            docker network create my-net
+
+      # An SSH server is required for tunneling traffic across the internet.
+      - run:
+          name: Start Dockerized SSH server
+          command: docker run -d --network=my-net --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
+
+      - run:
+          name: Build Docker image
+          command: docker build -t hyper-selenium-agent .
+
+      # An Agent runs Selenium and connects to the SSH server, to allow clients to use its service.
+      # This Agent would be run on Hyper.sh.
+      - run:
+          name: Run Agent
+          command: docker run -t --network=my-net --rm hyper-selenium-agent ./hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:22 --id=meow
+          background: true
+
+      # Install `dep` so that we can install project dependencies.
+      # - Guide: https://golang.github.io/dep/docs/installation.html
+      - run:
+          name: Install dep
+          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+      # Install dependencies using `dep`.
+      # - Guide: https://golang.github.io/dep/docs/daily-dep.html
+      - run: dep ensure
+
+      # Build a “static binary” for the Client. This Client will be used in a Node.js environment.
+      # - Guide: https://medium.com/@kelseyhightower/optimizing-docker-images-for-static-binaries-b5696e26eb07
+      - run:
+          name: Build Client Binary
+          command: |
+            mkdir -p build
+            env CGO_ENABLED=0 GOOS=linux go build -a -v -installsuffix cgo -o ./build/hyper-selenium-client ./cmd/hyper-selenium-client
+
+      # A Client connects to the SSH server and sets up port forwarding.
+      - run:
+          name: Run Client
+          command: |
+            docker create -v /opt/hyper-selenium/bin --name hyper-selenium-client-bin alpine:3.4 /bin/true
+            docker cp ./build/hyper-selenium-client hyper-selenium-client-bin:/opt/hyper-selenium/bin
+            docker run --network=my-net --volumes-from hyper-selenium-client-bin circleci/node:10 /opt/hyper-selenium/bin/hyper-selenium-client --ssh-remote=hyper-selenium-sshd:22 --id=meow true
