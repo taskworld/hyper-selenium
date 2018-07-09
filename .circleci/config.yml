@@ -33,7 +33,7 @@ jobs:
       # This Agent would be run on Hyper.sh.
       - run:
           name: Run Agent
-          command: docker run -t --network=my-net --rm hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:2222 --id=meow
+          command: docker run -t --network=my-net --rm hyper-selenium-agent ./hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:2222 --id=meow
           background: true
 
       # Install `dep` so that we can install project dependencies.
