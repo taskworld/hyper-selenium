@@ -39,7 +39,7 @@ func StartRecordingVideo(listener ProgressListener) *VTR {
 	vtr.wg.Add(1)
 
 	go func() {
-		vtr.wg.Done()
+		defer vtr.wg.Done()
 		cmd := exec.Command(
 			"ffmpeg",
 			"-video_size", "1280x1024",
