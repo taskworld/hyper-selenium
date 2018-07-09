@@ -21,9 +21,7 @@ var sshPassword string
 var videoOutPath string
 var utility []string
 
-var myLog = log.WithFields(log.Fields{
-	"sessionID": sessionID,
-})
+var myLog *log.Entry
 
 func init() {
 	flag.StringVar(&sessionID, "id", "", "session id -- must be unique")
@@ -45,6 +43,10 @@ func init() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+
+	myLog = log.WithFields(log.Fields{
+		"sessionID": sessionID,
+	})
 }
 
 func main() {
