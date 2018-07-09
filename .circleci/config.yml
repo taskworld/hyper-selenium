@@ -111,6 +111,7 @@ jobs:
               --network=my-net \
               --volumes-from=hyper-selenium-client-bin \
               --volumes-from=hyper-selenium-e2e \
+              --volumes-from=hyper-selenium-videos \
               circleci/node:10 \
               /opt/hyper-selenium/bin/hyper-selenium-client \
               --ssh-remote=hyper-selenium-sshd:22 \
