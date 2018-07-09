@@ -52,12 +52,35 @@ jobs:
           name: Build Client Binary
           command: |
             mkdir -p build
-            env CGO_ENABLED=0 GOOS=linux go build -a -v -installsuffix cgo -o ./build/hyper-selenium-client ./cmd/hyper-selenium-client
+            env CGO_ENABLED=0 GOOS=linux \
+              go build -a -v -installsuffix cgo \
+              -o ./build/hyper-selenium-client \
+              ./cmd/hyper-selenium-client
 
       # A Client connects to the SSH server and sets up port forwarding.
       - run:
           name: Run Client
           command: |
-            docker create -v /opt/hyper-selenium/bin --name hyper-selenium-client-bin alpine:3.4 /bin/true
-            docker cp ./build/hyper-selenium-client hyper-selenium-client-bin:/opt/hyper-selenium/bin
-            docker run --network=my-net --volumes-from hyper-selenium-client-bin circleci/node:10 /opt/hyper-selenium/bin/hyper-selenium-client --ssh-remote=hyper-selenium-sshd:22 --id=meow true
+            # Create a folder for holding the downloaded videos.
+            mkdir -p /videos
+
+            # Create a volume to store the client.
+            docker create \
+              -v /opt/hyper-selenium/bin \
+              --name hyper-selenium-client-bin \
+              alpine:3.4 \
+              /bin/true
+            docker cp \
+              ./build/hyper-selenium-client \
+              hyper-selenium-client-bin:/opt/hyper-selenium/bin
+
+            # Run the client
+            docker run \
+              --network=my-net \
+              --volumes-from=hyper-selenium-client-bin \
+              circleci/node:10 \
+              /opt/hyper-selenium/bin/hyper-selenium-client \
+              --ssh-remote=hyper-selenium-sshd:22 \
+              --id=meow \
+              --video-out=/videos/video.mp4 \
+              true
