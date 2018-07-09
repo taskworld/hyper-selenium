@@ -1,0 +1,18 @@
+version: 2
+jobs:
+ build:
+   machine: true
+   steps:
+     - checkout
+     - setup_remote_docker:
+         docker_layer_caching: true
+     - run:
+         name: Setup Docker network
+         command: |
+           docker network create my-net
+     - run:
+         name: Start Dockerized SSH server
+         command: docker run -d --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
+     - run:
+         name: Build Docker image
+         command: docker build -t hyper-selenium-agent .
