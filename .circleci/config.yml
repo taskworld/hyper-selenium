@@ -96,7 +96,7 @@ jobs:
               alpine:3.4 \
               /bin/true
             docker cp \
-              ./e2e/ \
+              ./e2e \
               hyper-selenium-e2e:/usr/src/app
 
             # Create a volume to store the video file.
@@ -116,7 +116,7 @@ jobs:
               --ssh-remote=hyper-selenium-sshd:22 \
               --id=meow \
               --video-out=/videos/video.mp4 \
-              bash -c "cd /usr/src/app && sudo yarn && yarn test"
+              bash -c "cd /usr/src/app/e2e && sudo yarn && yarn test"
 
             # Copy back the videos
             docker cp \
