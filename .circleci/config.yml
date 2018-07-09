@@ -113,11 +113,7 @@ jobs:
               --volumes-from=hyper-selenium-e2e \
               --volumes-from=hyper-selenium-videos \
               circleci/node:10 \
-              /opt/hyper-selenium/bin/hyper-selenium-client \
-              --ssh-remote=hyper-selenium-sshd:22 \
-              --id=meow \
-              --video-out=/videos/video.mp4 \
-              bash -c "cd /usr/src/app/e2e && sudo yarn && sudo yarn test"
+              bash -c "cd /usr/src/app/e2e && sudo yarn && sudo chmod a+rwx /videos && /opt/hyper-selenium/bin/hyper-selenium-client --ssh-remote=hyper-selenium-sshd:22 --id=meow --video-out=/videos/video.mp4 yarn test"
 
             # Copy back the videos
             docker cp \
