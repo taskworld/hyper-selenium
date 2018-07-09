@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:10
+      - image: circleci/golang:1.10
     steps:
       - checkout
       - setup_remote_docker:
@@ -13,7 +13,22 @@ jobs:
             docker network create my-net
       - run:
           name: Start Dockerized SSH server
-          command: docker run -d --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
+          command: docker run -d --network=my-net --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
       - run:
           name: Build Docker image
           command: docker build -t hyper-selenium-agent .
+      - run:
+          name: Run Agent
+          command: docker run -t --network=my-net --rm hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:2222 --id=meow
+          background: true
+      - run:
+          name: Build Client Binary
+          command: |
+            mkdir -p build
+            env CGO_ENABLED=0 GOOS=linux go build -a -v -installsuffix cgo -o ./build/hyper-selenium-client ./cmd/hyper-selenium-client
+      - run:
+          name: Run Client
+          command: |
+            docker create -v /opt/hyper-selenium/bin --name hyper-selenium-client-bin alpine:3.4 /bin/true
+            docker cp ./build/hyper-selenium-client hyper-selenium-client-bin:/opt/hyper-selenium/bin
+            docker run --network=my-net --volumes-from hyper-selenium-client-bin circleci/node:10 /opt/hyper-selenium/bin/hyper-selenium-client --ssh-remote=hyper-selenium-sshd:2222 --id=meow true
