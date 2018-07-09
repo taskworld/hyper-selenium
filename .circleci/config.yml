@@ -5,27 +5,43 @@ jobs:
       - image: circleci/golang:1.10
     steps:
       - checkout
+
+      # This makes CircleCI 2.0 able to use Docker commands.
+      # - Guide: https://circleci.com/docs/2.0/building-docker-images/
+      # - Reference: https://circleci.com/docs/2.0/configuration-reference/#setup_remote_docker
       - setup_remote_docker:
           docker_layer_caching: true
+
+      # Set up a user-defined bridge, so that containers can talk to each other more easily.
+      # - Guide: https://docs.docker.com/network/bridge/
       - run:
           name: Setup Docker network
           command: |
             docker network create my-net
+
+      # An SSH server is required for tunneling traffic across the internet.
       - run:
           name: Start Dockerized SSH server
           command: docker run -d --network=my-net --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
+
       - run:
           name: Build Docker image
           command: docker build -t hyper-selenium-agent .
+
+      # An Agent runs Selenium and connects to the SSH server, to allow clients to use its service.
+      # This Agent would be run on Hyper.sh.
       - run:
           name: Run Agent
           command: docker run -t --network=my-net --rm hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:2222 --id=meow
           background: true
+
       - run:
           name: Build Client Binary
           command: |
             mkdir -p build
             env CGO_ENABLED=0 GOOS=linux go build -a -v -installsuffix cgo -o ./build/hyper-selenium-client ./cmd/hyper-selenium-client
+
+      # A Client connects to the SSH server and sets up port forwarding.
       - run:
           name: Run Client
           command: |
