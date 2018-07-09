@@ -84,3 +84,9 @@ jobs:
               --id=meow \
               --video-out=/videos/video.mp4 \
               true
+
+      # Store the downloaded video into CircleCI artifacts.
+      # - Guide: https://circleci.com/docs/2.0/artifacts/
+      - store_artifacts:
+          path: /videos
+          destination: videos
