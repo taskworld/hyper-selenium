@@ -13,45 +13,59 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
 
-      # Set up a user-defined bridge, so that containers can talk to each other more easily.
-      # - Guide: https://docs.docker.com/network/bridge/
       - run:
           name: Setup Docker network
           command: |
+            # Set up a user-defined bridge, so that containers can talk to each other more easily.
+            # - Guide: https://docs.docker.com/network/bridge/
             docker network create my-net
 
-      # An SSH server is required for tunneling traffic across the internet.
       - run:
           name: Start Dockerized SSH server
-          command: docker run -d --network=my-net --name hyper-selenium-sshd rastasheep/ubuntu-sshd:18.04
+          command: |
+            # An SSH server is required for tunneling traffic across the internet.
+            # - https://github.com/rastasheep/ubuntu-sshd
+            # - https://hub.docker.com/r/rastasheep/ubuntu-sshd/
+            docker run -d \
+              --network=my-net \
+              --name=hyper-selenium-sshd \
+              rastasheep/ubuntu-sshd:18.04
 
       - run:
           name: Build Docker image
           command: docker build -t hyper-selenium-agent .
 
-      # An Agent runs Selenium and connects to the SSH server, to allow clients to use its service.
-      # This Agent would be run on Hyper.sh.
       - run:
           name: Run Agent
-          command: docker run -t --network=my-net --rm hyper-selenium-agent ./hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:22 --id=meow
+          command: |
+            # An Agent runs Selenium and connects to the SSH server,
+            # to allow clients to use its service.
+            # This Agent would be run on Hyper.sh.
+            docker run -t --network=my-net --rm hyper-selenium-agent ./hyper-selenium-agent --ssh-remote=hyper-selenium-sshd:22 --id=meow
           background: true
 
-      # Install `dep` so that we can install project dependencies.
-      # - Guide: https://golang.github.io/dep/docs/installation.html
       - run:
           name: Install dep
-          command: curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+          command: |
+            # Install `dep` so that we can install project dependencies.
+            # - Guide: https://golang.github.io/dep/docs/installation.html
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-      # Install dependencies using `dep`.
-      # - Guide: https://golang.github.io/dep/docs/daily-dep.html
-      - run: dep ensure
+      - run:
+          name: dep ensure
+          command: |
+            # Install dependencies using `dep`.
+            # - Guide: https://golang.github.io/dep/docs/daily-dep.html
+            dep ensure
 
-      # Build a “static binary” for the Client. This Client will be used in a Node.js environment.
-      # - Guide: https://medium.com/@kelseyhightower/optimizing-docker-images-for-static-binaries-b5696e26eb07
       - run:
           name: Build Client Binary
           command: |
             mkdir -p build
+
+            # Build a “static binary” for the Client.
+            # This Client will be used in a Node.js environment.
+            # - Guide: https://medium.com/@kelseyhightower/optimizing-docker-images-for-static-binaries-b5696e26eb07
             env CGO_ENABLED=0 GOOS=linux \
               go build -a -v -installsuffix cgo \
               -o ./build/hyper-selenium-client \
@@ -85,6 +99,13 @@ jobs:
               ./e2e/ \
               hyper-selenium-e2e:/usr/src/app
 
+            # Create a volume to store the video file.
+            docker create \
+              -v /videos \
+              --name hyper-selenium-videos \
+              alpine:3.4 \
+              /bin/true
+
             # Run the client
             docker run \
               --network=my-net \
@@ -95,7 +116,12 @@ jobs:
               --ssh-remote=hyper-selenium-sshd:22 \
               --id=meow \
               --video-out=/videos/video.mp4 \
-              bash -c "yarn && yarn test"
+              bash -c "cd /usr/src/app && sudo yarn && yarn test"
+
+            # Copy back the videos
+            docker cp \
+              hyper-selenium-videos:/videos/video.mp4 \
+              /videos || echo "Cannot copy video..."
 
       # Store the downloaded video into CircleCI artifacts.
       # - Guide: https://circleci.com/docs/2.0/artifacts/
