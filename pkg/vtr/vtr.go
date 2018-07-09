@@ -70,6 +70,7 @@ func StartRecordingVideo(listener ProgressListener) *VTR {
 				listener.SetStatus("error")
 			}
 			myLog.Error("Cannot send SIGINT to ffmpeg process: ", err)
+			return
 		}
 		if err := cmd.Wait(); err != nil {
 			myLog.Info("ffmpeg exited: ", err)
