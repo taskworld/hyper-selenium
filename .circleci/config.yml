@@ -117,7 +117,7 @@ jobs:
               --ssh-remote=hyper-selenium-sshd:22 \
               --id=meow \
               --video-out=/videos/video.mp4 \
-              bash -c "cd /usr/src/app/e2e && sudo yarn && yarn test"
+              bash -c "cd /usr/src/app/e2e && sudo yarn && sudo yarn test"
 
             # Copy back the videos
             docker cp \
