@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -50,6 +51,10 @@ func init() {
 }
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	myLog.Info("Initializing...")
 	prefix := "/tmp/hyper-selenium-" + sessionID
 
@@ -114,8 +119,17 @@ func main() {
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), childEnv...)
 	if err := cmd.Run(); err != nil {
-		myLog.Fatal("Utility run failed: ", err)
+		myLog.Error("Utility run failed: ", err)
+		// Copy-and-pasted from https://stackoverflow.com/questions/10385551/get-exit-code-go
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				return status.ExitStatus()
+			}
+		}
+		return 1
 	}
+
+	return 0
 }
 
 func fetchVideo(infoServerAddress string) {
