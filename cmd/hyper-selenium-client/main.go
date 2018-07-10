@@ -73,7 +73,7 @@ func run() int {
 	for {
 		if time.Now().Sub(start).Seconds() > maxTimeout {
 			myLog.Fatal("Give up waiting for server to be ready...")
-			return
+			return 1
 		}
 		timeout := time.Duration(5 * time.Second)
 		client := http.Client{
