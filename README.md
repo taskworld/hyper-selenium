@@ -2,29 +2,26 @@
 
 ⚠️ ⚠️ **Go Noob Warning:** This is my first ever Go project. Please expect to see a lot of stupid noobish unidiomatic Go code in here. PRs welcome. ⚠️ ⚠️
 
-## The story
+## Architecture
 
-This is the story of our E2E test infrastructure.
+<img src="https://docs.google.com/drawings/d/e/2PACX-1vSmoU3tAQIhgiMLSLD0Ut-XUBv41VqJdVbCElUL3bEAusVq3QaoORLnTXQGVsxzqx9X6ejYj29KSCCt/pub?w=899&amp;h=223">
 
-### Part 1: Selenium running on CircleCI
+- **Local machine:** The machine running the E2E test.
 
-The simplest E2E solution is to run Selenium locally on the CI. However, a single CI container is only capable of running a single test at a time. Running tests in parallel makes it very unstable.
+  - Contains the test scripts.
+  - Not powerful enough to run all of these tests at the same time.
 
-To get more parallelism, we would need to rent more containers, each costs $50 per month.
+- **Docker container:** This container runs Selenium.
 
-### Part 2: Selenium running on DigitalOcean machines
+  - Can be spawned on-demand. e.g. 20 containers are spawned to run 20 tests simultaneously.
+  - For cost-effectiveness, should be billed per-second. [Hyper.sh](https://hyper.sh/) offers this.
+  - It might not have its own IP address, so a secure tunnel must be employed.
 
-To solve this problem, we launched 5 droplets on DigitalOcean.
-Each droplet costs $10 per month and can handle a single running Selenium instance. This allows us to run E2E tests 5x faster.
+- **SSH server:** This server allows the Local machine and Docker container to communicate with each other.
 
-However, there are significantly more moving parts that we have to manage.
+TODO talk about agent and client.
 
-- We had to self-manage a cluster of Selenium servers.
-- We had to create a system that allocates tasks to an available container.
-
-### Part 3: Selenium running on Hyper.sh
-
-## Workflow
+## Development
 
 ### Agent
 
