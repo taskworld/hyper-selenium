@@ -133,7 +133,7 @@ func run() int {
 }
 
 func fetchVideo(infoServerAddress string) {
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(30 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
