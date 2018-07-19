@@ -125,3 +125,8 @@ jobs:
       - store_artifacts:
           path: /videos
           destination: videos
+
+      # Store the compiled hyper-selenium-client
+      - store_artifacts:
+          path: build/hyper-selenium-client
+          destination: build/hyper-selenium-client
