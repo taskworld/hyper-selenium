@@ -71,6 +71,16 @@ jobs:
               -o ./build/hyper-selenium-client \
               ./cmd/hyper-selenium-client
 
+      - run:
+          name: Build Client Binary (for Mac)
+          command: |
+            mkdir -p build/darwin
+
+            env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 \
+              go build -a -v -installsuffix cgo \
+              -o ./build/darwin/hyper-selenium-client \
+              ./cmd/hyper-selenium-client
+
       # A Client connects to the SSH server and sets up port forwarding.
       - run:
           name: Run Client
@@ -126,7 +136,7 @@ jobs:
           path: /videos
           destination: videos
 
-      # Store the compiled hyper-selenium-client
+      # Store the compiled artifacts
       - store_artifacts:
-          path: build/hyper-selenium-client
-          destination: build/hyper-selenium-client
+          path: build
+          destination: build
