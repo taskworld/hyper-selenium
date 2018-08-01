@@ -136,7 +136,15 @@ jobs:
           path: /videos
           destination: videos
 
+      # Create the distributions
+      - run:
+          name: Create distribution tarballs
+          command: |
+            mkdir -p dist
+            tar cvzf dist/hyper-selenium-client-linux.tar.gz -C build hyper-selenium-client
+            tar cvzf dist/hyper-selenium-client-mac.tar.gz -C build/darwin hyper-selenium-client
+
       # Store the compiled artifacts
       - store_artifacts:
-          path: build
-          destination: build
+          path: dist
+          destination: dist
